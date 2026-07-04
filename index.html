@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>いっぽいっぽ BASIC - Unit 03,04 단어카드</title>
+<style>
+  :root{
+    --washi:#f4efe4;
+    --washi-dark:#e8dfc9;
+    --sumi:#2b2b28;
+    --shu:#b5493a;      /* 붉은 인주색 */
+    --ai:#33546b;        /* 쪽빛 */
+    --gold:#a98a4a;
+    --line:#cfc4a3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Noto Sans KR','Malgun Gothic',sans-serif;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(181,73,58,0.05), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(51,84,107,0.06), transparent 40%),
+      var(--washi);
+    color:var(--sumi);
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+  header{
+    text-align:center;
+    margin-bottom:20px;
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:4px;
+    color:var(--shu);
+    font-weight:700;
+  }
+  h1{
+    font-size:22px;
+    margin:6px 0 2px;
+    letter-spacing:1px;
+  }
+  .sub{font-size:13px;color:#6b6355;}
+
+  .unit-tabs{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin:18px 0;
+    flex-wrap:wrap;
+  }
+  .unit-tab{
+    padding:8px 16px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:#fff;
+    font-size:13px;
+    cursor:pointer;
+    color:var(--sumi);
+    transition:.15s;
+  }
+  .unit-tab.active{
+    background:var(--sumi);
+    color:var(--washi);
+    border-color:var(--sumi);
+  }
+
+  .progress-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:12px;
+    color:#6b6355;
+    margin:8px 4px 10px;
+  }
+  .progress-bar{
+    height:4px;
+    background:var(--washi-dark);
+    border-radius:2px;
+    overflow:hidden;
+    margin:0 4px 18px;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--shu);
+    width:0%;
+    transition:width .25s ease;
+  }
+
+  .stage{
+    perspective:1400px;
+    margin-bottom:22px;
+  }
+  .card{
+    position:relative;
+    height:260px;
+    border-radius:14px;
+    cursor:pointer;
+    transform-style:preserve-3d;
+  }
+  .card.flipped{transform:rotateY(180deg);}
+  .face{
+    position:absolute;
+    inset:0;
+    border-radius:14px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    backface-visibility:hidden;
+    box-shadow:0 6px 18px rgba(43,43,40,0.12);
+    border:1px solid var(--line);
+    padding:20px;
+    text-align:center;
+  }
+  .front{background:#fffdf8;}
+  .back{
+    background:var(--sumi);
+    color:var(--washi);
+    transform:rotateY(180deg);
+  }
+  .kanji{
+    font-size:52px;
+    font-weight:700;
+    letter-spacing:1px;
+    line-height:1.2;
+  }
+  .yomi{
+    margin-top:14px;
+    font-size:18px;
+    color:var(--ai);
+    font-weight:600;
+  }
+  .back .yomi{
+    color:#f0d9a8;
+  }
+  .tag{
+    position:absolute;
+    top:14px;
+    left:16px;
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--gold);
+    font-weight:700;
+  }
+  .hint{
+    position:absolute;
+    bottom:14px;
+    font-size:11px;
+    color:#a39a86;
+  }
+  .back .hint{color:#a89f8a;}
+  .meaning{
+    font-size:30px;
+    font-weight:700;
+  }
+  .back .kor-yomi{
+    margin-top:10px;
+    font-size:16px;
+    color:#d9b98f;
+    font-weight:500;
+  }
+
+  .controls{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:6px;
+  }
+  button.nav{
+    border:none;
+    background:#fff;
+    border:1px solid var(--line);
+    padding:10px 18px;
+    border-radius:10px;
+    font-size:14px;
+    cursor:pointer;
+    color:var(--sumi);
+    transition:.15s;
+  }
+  button.nav:hover{background:var(--washi-dark);}
+  button.nav.primary{
+    background:var(--shu);
+    border-color:var(--shu);
+    color:#fff;
+  }
+  button.nav.primary:hover{background:#9c3f32;}
+  button.nav:disabled{opacity:.35;cursor:default;}
+
+  .toolbar{
+    display:flex;
+    justify-content:center;
+    gap:16px;
+    margin-top:18px;
+    font-size:13px;
+  }
+  .toolbar a{
+    color:var(--ai);
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:3px;
+  }
+
+  .list-view{
+    margin-top:30px;
+    border-top:1px dashed var(--line);
+    padding-top:18px;
+  }
+  .list-view table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  .list-view th{
+    text-align:left;
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--gold);
+    padding:6px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  .list-view td{
+    padding:8px;
+    border-bottom:1px solid var(--washi-dark);
+  }
+  .list-view .kanji-cell{font-weight:700;font-size:16px;}
+  .list-view .yomi-cell{color:var(--ai);}
+  details summary{
+    text-align:center;
+    cursor:pointer;
+    color:#6b6355;
+    font-size:13px;
+    margin-top:8px;
+    list-style:none;
+  }
+  details summary::-webkit-details-marker{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">いっぽいっぽ BASIC 1단계</div>
+    <h1>단어 암기 카드</h1>
+    <div class="sub">카드를 탭하면 뒤집혀요 · 한자 → 뜻 · 한글 발음 표기 포함</div>
+  </header>
+
+  <div class="unit-tabs" id="unitTabs"></div>
+
+  <div class="progress-row">
+    <span id="progressText">1 / 43</span>
+    <span id="unitLabel">UNIT 03</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="stage">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="tag">뜻</div>
+        <div class="meaning" id="frontMeaning">엔</div>
+        <div class="hint">탭해서 일본어 보기</div>
+      </div>
+      <div class="face back">
+        <div class="tag">にほんご</div>
+        <div class="kanji" id="backKanji">円</div>
+        <div class="yomi" id="backReading">えん</div>
+        <div class="kor-yomi" id="backKorReading">(발음: 엔)</div>
+        <div class="hint">다시 탭해서 앞면 보기</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="nav" id="prevBtn">← 이전</button>
+    <button class="nav primary" id="flipBtn">뒤집기</button>
+    <button class="nav" id="nextBtn">다음 →</button>
+  </div>
+
+  <div class="toolbar">
+    <a id="shuffleBtn">🔀 섞기</a>
+    <a id="resetBtn">↺ 순서대로</a>
+  </div>
+
+  <details class="list-view">
+    <summary>▾ 전체 단어 목록으로 보기</summary>
+    <table id="listTable">
+      <thead><tr><th>한자/단어</th><th>발음(가나)</th><th>한글 발음</th><th>뜻</th></tr></thead>
+      <tbody id="listBody"></tbody>
+    </table>
+  </details>
+</div>
+
+<script>
+const data = {
+  "Unit 1,2": [
+    ["私","わたし","와따시","저"],
+    ["先生","せんせい","센세-","선생님"],
+    ["フリーランサー","ふりーらんさー","후리-란사-","프리랜서"],
+    ["日本人","にほんじん","니혼징","일본인"],
+    ["中学生","ちゅうがくせい","츄-각세-","중학생"],
+    ["医者","いしゃ","이샤","의사"],
+    ["アメリカ人","あめりかじん","아메리카징","미국인"],
+    ["恋人","こいびと","코이비토","애인"],
+    ["江南","かんなむ","캉나무","강남"],
+    ["仕事","しごと","시고또","일, 직업"],
+    ["趣味","しゅみ","슈미","취미"],
+    ["彼女","かのじょ","카노죠","여자친구"],
+    ["何","なん","난","무엇"],
+    ["料理","りょうり","료-리","요리"],
+    ["どうぞ","どうぞ","도-조","아무쪼록"],
+    ["お願いします","おねがいします","오네가이시마스","부탁합니다"],
+    ["学生","がくせい","각세-","학생"],
+    ["会社員","かいしゃいん","카이샤잉","회사원"],
+    ["韓国人","かんこくじん","캉코쿠징","한국인"],
+    ["高校生","こうこうせい","코-꼬-세-","고등학생"],
+    ["主婦","しゅふ","슈후","주부"],
+    ["中国人","ちゅうごくじん","츄-고쿠징","중국인"],
+    ["大学生","だいがくせい","다이각세-","대학생"],
+    ["友達","ともだち","토모다찌","친구"],
+    ["名前","なまえ","나마에","이름"],
+    ["同僚","どうりょう","도-료-","동료"],
+    ["彼氏","かれし","카레시","남자친구"],
+    ["大学","だいがく","다이가쿠","대학(교)"],
+    ["大学院生","だいがくいんせい","다이가쿠인세-","대학원생"],
+    ["~も","~も","~모","~도"],
+    ["よろしく","よろしく","요로시쿠","잘"],
+    ["これ","これ","코레","이것"],
+    ["それ","それ","소레","그것"],
+    ["あれ","あれ","아레","저것"],
+    ["ここ","ここ","코꼬","여기"],
+    ["そこ","そこ","소꼬","거기"],
+    ["あそこ","あそこ","아소꼬","저기"],
+    ["この","この","코노","이"],
+    ["その","その","소노","그"],
+    ["あの","あの","아노","저"],
+    ["どこ","どこ","도꼬","어디"],
+    ["誰","だれ","다레","누구"],
+    ["いつ","いつ","이쯔","언제"],
+    ["ケータイ","けいたい","케-따이","휴대폰"],
+    ["ペン","ぺん","펜","펜"],
+    ["スマホ","すまほ","스마호","스마트폰"],
+    ["かばん","かばん","카방","가방"],
+    ["パソコン","ぱそこん","파소콩","컴퓨터"],
+    ["本","ほん","홍","책"],
+    ["コーヒー","こーひー","코-히-","커피"],
+    ["財布","さいふ","사이후","지갑"],
+    ["ノート","のーと","노-또","노트"],
+    ["車","くるま","쿠루마","차"],
+    ["学校","がっこう","각꼬-","학교"],
+    ["会社","かいしゃ","카이샤","회사"],
+    ["病院","びょういん","뵤-잉","병원"],
+    ["公園","こうえん","코-엥","공원"],
+    ["駅","えき","에끼","역"],
+    ["映画館","えいがかん","에-가깡","영화관"],
+    ["コンビニ","こんびに","콤비니","편의점"],
+    ["図書館","としょかん","토쇼깡","도서관"],
+    ["カフェ","かふぇ","카훼","카페"],
+    ["銀行","ぎんこう","깅꼬-","은행"],
+    ["デパート","でぱーと","데파-또","백화점"],
+    ["高校","こうこう","코-꼬-","고교"],
+    ["中学校","ちゅうがっこう","츄-각꼬-","중학교"],
+    ["ワイン","わいん","와잉","와인"],
+    ["イタリア","いたりあ","이타리아","이탈리아"],
+    ["フランス","ふらんす","후랑스","프랑스"],
+    ["チケット","ちけっと","치켓또","티켓"],
+    ["ミュージカル","みゅーじかる","뮤-지카루","뮤지컬"],
+    ["何の","なんの","난노","무슨"],
+    ["お茶","おちゃ","오챠","차"],
+    ["ホットコーヒー","ほっとこーひー","홋또코-히-","뜨거운 커피"],
+    ["写真","しゃしん","샤싱","사진"],
+    ["赤い","あかい","아까이","빨갛다"]
+  ],
+  "Unit 3,4": [
+    ["いくら","いくら","이쿠라","얼마"],
+    ["円","えん","엔","엔"],
+    ["服","ふく","후쿠","옷"],
+    ["ケーキ","けーき","케-키","케이크"],
+    ["かばん","かばん","카방","가방"],
+    ["何時","なんじ","난지","몇 시"],
+    ["何分","なんぷん","난뿡","몇 분"],
+    ["テスト","てすと","테스또","테스트"],
+    ["試験","しけん","시켕","시험"],
+    ["授業","じゅぎょう","쥬교-","수업"],
+    ["約束","やくそく","약소꾸","약속"],
+    ["会議","かいぎ","카이기","회의"],
+    ["アルバイト","あるばいと","아루바이또","아르바이트"],
+    ["今","いま","이마","지금"],
+    ["時間","じかん","지캉","시간"],
+    ["午前","ごぜん","고젠","오전"],
+    ["午後","ごご","고고","오후"],
+    ["朝","あさ","아사","아침"],
+    ["昼","ひる","히루","낮, 점심"],
+    ["夜","よる","요루","밤"],
+    ["何月","なんがつ","낭가쯔","몇 월"],
+    ["何日","なんにち","난니찌","며칠"],
+    ["出張","しゅっちょう","슛쬬-","출장"],
+    ["誕生日","たんじょうび","탄죠-비","생일"],
+    ["旅行","りょこう","료꼬-","여행"],
+    ["飲み会","のみかい","노미까이","회식"],
+    ["休み","やすみ","야스미","쉬는 날"],
+    ["いつ","いつ","이쯔","언제"],
+    ["昨日","きのう","키노-","어제"],
+    ["今日","きょう","쿄-","오늘"],
+    ["明日","あした","아시따","내일"],
+    ["平日","へいじつ","헤-지쯔","평일"],
+    ["週末","しゅうまつ","슈-마쯔","주말"],
+    ["月曜日","げつようび","게쯔요-비","월요일"],
+    ["火曜日","かようび","카요-비","화요일"],
+    ["水曜日","すいようび","스이요-비","수요일"],
+    ["木曜日","もくようび","모꾸요-비","목요일"],
+    ["金曜日","きんようび","킹요-비","금요일"],
+    ["土曜日","どようび","도요-비","토요일"],
+    ["日曜日","にちようび","니찌요-비","일요일"],
+    ["何曜日","なんようび","낭요-비","무슨 요일"],
+    ["キロメートル","きろめーとる","키로메-토루","킬로미터"],
+    ["コンサート","こんさーと","콘사-또","콘서트"],
+    ["飛行機","ひこうき","히코-끼","비행기"],
+    ["時給","じきゅう","지큐-","시급"],
+    ["先輩","せんぱい","셈빠이","선배"],
+    ["買う","かう","카우","사다"],
+    ["死ぬ","しぬ","시누","죽다"],
+    ["飲む","のむ","노무","마시다"],
+    ["読む","よむ","요무","읽다"],
+    ["遊ぶ","あそぶ","아소부","놀다"],
+    ["待つ","まつ","마쯔","기다리다"],
+    ["泳ぐ","およぐ","오요구","헤엄치다"],
+    ["聞く","きく","키쿠","듣다, 묻다"],
+    ["話す","はなす","하나스","이야기하다"],
+    ["作る","つくる","츠쿠루","만들다"],
+    ["見る","みる","미루","보다"],
+    ["食べる","たべる","타베루","먹다"],
+    ["する","する","스루","하다"],
+    ["来る","くる","쿠루","오다"],
+    ["起きる","おきる","오키루","일어나다"],
+    ["休む","やすむ","야스무","쉬다"],
+    ["覚える","おぼえる","오보에루","외우다"],
+    ["乗る","のる","노루","타다"],
+    ["会う","あう","아우","만나다"],
+    ["借りる","かりる","카리루","빌리다"],
+    ["答える","こたえる","코타에루","대답하다"],
+    ["行く","いく","이쿠","가다"],
+    ["終わる","おわる","오와루","끝나다"],
+    ["寝る","ねる","네루","자다"],
+    ["帰る","かえる","카에루","돌아가다"],
+    ["入る","はいる","하이루","들어가다"],
+    ["書く","かく","카쿠","쓰다"],
+    ["歩く","あるく","아루쿠","걷다"],
+    ["働く","はたらく","하타라쿠","일하다"]
+  ],
+  "날짜": [
+    ["1日","ついたち","츠이타치","1일"],
+    ["2日","ふつか","후츠카","2일"],
+    ["3日","みっか","믹카","3일"],
+    ["4日","よっか","욧카","4일"],
+    ["5日","いつか","이츠카","5일"],
+    ["6日","むいか","무이카","6일"],
+    ["7日","なのか","나노카","7일"],
+    ["8日","ようか","요-카","8일"],
+    ["9日","ここのか","코코노카","9일"],
+    ["10日","とおか","토-카","10일"],
+    ["11日","じゅういちにち","쥬-이치니치","11일"],
+    ["12日","じゅうににち","쥬-니니치","12일"],
+    ["13日","じゅうさんにち","쥬-산니치","13일"],
+    ["14日","じゅうよっか","쥬-욧카","14일"],
+    ["15日","じゅうごにち","쥬-고니치","15일"],
+    ["16日","じゅうろくにち","쥬-로쿠니치","16일"],
+    ["17日","じゅうしちにち","쥬-시치니치","17일"],
+    ["18日","じゅうはちにち","쥬-하치니치","18일"],
+    ["19日","じゅうくにち","쥬-쿠니치","19일"],
+    ["20日","はつか","하츠카","20일"],
+    ["21日","にじゅういちにち","니쥬-이치니치","21일"],
+    ["22日","にじゅうににち","니쥬-니니치","22일"],
+    ["23日","にじゅうさんにち","니쥬-산니치","23일"],
+    ["24日","にじゅうよっか","니쥬-욧카","24일"],
+    ["25日","にじゅうごにち","니쥬-고니치","25일"],
+    ["26日","にじゅうろくにち","니쥬-로쿠니치","26일"],
+    ["27日","にじゅうしちにち","니쥬-시치니치","27일"],
+    ["28日","にじゅうはちにち","니쥬-하치니치","28일"],
+    ["29日","にじゅうくにち","니쥬-쿠니치","29일"],
+    ["30日","さんじゅうにち","산쥬-니치","30일"],
+    ["31日","さんじゅういちにち","산쥬-이치니치","31일"]
+  ],
+  "요일": [
+    ["月曜日","げつようび","게쯔요-비","월요일"],
+    ["火曜日","かようび","카요-비","화요일"],
+    ["水曜日","すいようび","스이요-비","수요일"],
+    ["木曜日","もくようび","모꾸요-비","목요일"],
+    ["金曜日","きんようび","킹요-비","금요일"],
+    ["土曜日","どようび","도요-비","토요일"],
+    ["日曜日","にちようび","니찌요-비","일요일"],
+    ["何曜日","なんようび","낭요-비","무슨 요일"],
+    ["平日","へいじつ","헤-지쯔","평일"],
+    ["週末","しゅうまつ","슈-마쯔","주말"]
+  ]
+};
+
+let currentUnit = "Unit 1,2";
+let order = [];
+let idx = 0;
+let flipped = false;
+
+const unitTabs = document.getElementById('unitTabs');
+Object.keys(data).forEach(u=>{
+  const btn = document.createElement('div');
+  btn.className = 'unit-tab' + (u===currentUnit?' active':'');
+  btn.textContent = u;
+  btn.onclick = ()=>{ currentUnit = u; resetOrder(); updateTabs(); render(); };
+  btn.dataset.unit = u;
+  unitTabs.appendChild(btn);
+});
+
+function updateTabs(){
+  [...unitTabs.children].forEach(el=>{
+    el.classList.toggle('active', el.dataset.unit===currentUnit);
+  });
+}
+
+function resetOrder(){
+  order = data[currentUnit].map((_,i)=>i);
+  idx = 0;
+  flipped = false;
+}
+
+function shuffleOrder(){
+  for(let i=order.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [order[i],order[j]] = [order[j],order[i]];
+  }
+  idx = 0;
+  flipped = false;
+  render();
+}
+
+const card = document.getElementById('card');
+const frontMeaning = document.getElementById('frontMeaning');
+const backKanji = document.getElementById('backKanji');
+const backReading = document.getElementById('backReading');
+const backKorReading = document.getElementById('backKorReading');
+const progressText = document.getElementById('progressText');
+const progressFill = document.getElementById('progressFill');
+const unitLabel = document.getElementById('unitLabel');
+
+function render(){
+  const list = data[currentUnit];
+  const realIdx = order[idx];
+  const [kanji, kana, kor, meaning] = list[realIdx];
+  frontMeaning.textContent = meaning;
+  backKanji.textContent = kanji;
+  backReading.textContent = kana;
+  backKorReading.textContent = `(발음: ${kor})`;
+  card.classList.toggle('flipped', flipped);
+  progressText.textContent = `${idx+1} / ${list.length}`;
+  progressFill.style.width = `${((idx+1)/list.length)*100}%`;
+  unitLabel.textContent = currentUnit;
+  document.getElementById('prevBtn').disabled = idx===0;
+  document.getElementById('nextBtn').disabled = idx===list.length-1;
+  renderList();
+}
+
+function renderList(){
+  const body = document.getElementById('listBody');
+  body.innerHTML = '';
+  data[currentUnit].forEach(([kanji,kana,kor,meaning])=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="kanji-cell">${kanji}</td><td class="yomi-cell">${kana}</td><td>${kor}</td><td>${meaning}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+card.addEventListener('click', ()=>{
+  flipped = !flipped;
+  card.classList.toggle('flipped', flipped);
+});
+
+document.getElementById('flipBtn').onclick = (e)=>{
+  e.stopPropagation();
+  flipped = !flipped;
+  card.classList.toggle('flipped', flipped);
+};
+
+document.getElementById('prevBtn').onclick = ()=>{
+  if(idx>0){ idx--; flipped=false; render(); }
+};
+document.getElementById('nextBtn').onclick = ()=>{
+  if(idx<order.length-1){ idx++; flipped=false; render(); }
+};
+document.getElementById('shuffleBtn').onclick = shuffleOrder;
+document.getElementById('resetBtn').onclick = ()=>{ resetOrder(); render(); };
+
+resetOrder();
+render();
+</script>
+</body>
+</html>
