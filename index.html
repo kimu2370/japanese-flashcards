@@ -228,6 +228,63 @@
     border-top:1px dashed var(--line);
     padding-top:16px;
   }
+
+  .kanji-panel{
+    margin-top:18px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#fffdf8;
+    padding:14px 12px 12px;
+    display:none;
+  }
+  .kanji-panel.show{
+    display:block;
+  }
+  .kanji-panel-title{
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--gold);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .kanji-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .kanji-item{
+    flex:0 0 auto;
+    width:76px;
+    text-align:center;
+    background:var(--washi);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px 4px 7px;
+  }
+  .kanji-item img{
+    width:52px;
+    height:52px;
+    background:#fff;
+    border-radius:6px;
+    border:1px solid var(--washi-dark);
+  }
+  .kanji-item .kanji-char{
+    font-size:20px;
+    font-weight:700;
+    margin-top:5px;
+    line-height:1.1;
+  }
+  .kanji-item .kanji-eum{
+    font-size:11px;
+    color:var(--ai);
+    margin-top:3px;
+    line-height:1.25;
+    word-break:keep-all;
+  }
+  .kanji-empty{
+    font-size:12.5px;
+    color:#9a9284;
+  }
   .list-scroll{
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
@@ -306,6 +363,11 @@
   <div class="toolbar">
     <a id="shuffleBtn">🔀 섞기</a>
     <a id="resetBtn">↺ 순서대로</a>
+  </div>
+
+  <div class="kanji-panel" id="kanjiPanel">
+    <div class="kanji-panel-title">이 단어의 한자</div>
+    <div class="kanji-list" id="kanjiList"></div>
   </div>
 
   <details class="list-view">
@@ -692,6 +754,74 @@ const progressText = document.getElementById('progressText');
 const progressFill = document.getElementById('progressFill');
 const unitLabel = document.getElementById('unitLabel');
 
+// 한자 훈음(뜻+음) 사전 — 카드에 등장하는 한자 전체 커버
+const hanjaEumhun = {
+"一":"한 일","丈":"어른 장","上":"윗 상","下":"아래 하","中":"가운데 중","主":"주인 주","乗":"탈 승",
+"事":"일 사","人":"사람 인","今":"이제 금","仕":"섬길 사","休":"쉴 휴","会":"모일 회","何":"어찌 하",
+"作":"지을 작","便":"편할 편","借":"빌릴 차","備":"갖출 비","働":"일할 동","僚":"동료 료","元":"으뜸 원",
+"兄":"형 형","先":"먼저 선","入":"들 입","全":"온전 전","公":"공평할 공","円":"둥글 원","写":"베낄 사",
+"出":"날 출","分":"나눌 분","切":"끊을 절","利":"이할 리","前":"앞 전","勉":"힘쓸 면","動":"움직일 동",
+"医":"의원 의","午":"낮 오","南":"남녘 남","単":"홑 단","友":"벗 우","同":"한가지 동","名":"이름 명",
+"味":"맛 미","員":"인원 원","図":"그림 도","国":"나라 국","園":"동산 원","土":"흙 토","地":"땅 지",
+"変":"변할 변","夏":"여름 하","外":"바깥 외","夜":"밤 야","大":"큰 대","夫":"지아비 부","女":"계집 녀",
+"始":"비로소 시","娘":"아가씨 낭","婦":"며느리 부","子":"아들 자","学":"배울 학","室":"집 실","家":"집 가",
+"寝":"잘 침","少":"적을 소","屋":"집 옥","布":"베 포","帰":"돌아갈 귀","平":"평평할 평","年":"해 년",
+"幸":"다행 행","店":"가게 점","弟":"아우 제","張":"베풀 장","強":"강할 강","当":"마땅 당","彼":"저 피",
+"待":"기다릴 대","後":"뒤 후","恋":"그리워할 련","息":"쉴 식","手":"손 수","授":"줄 수","教":"가르칠 교",
+"散":"흩을 산","料":"헤아릴 료","新":"새 신","旅":"나그네 려","日":"날 일","明":"밝을 명","映":"비칠 영",
+"昨":"어제 작","昼":"낮 주","時":"때 시","晩":"늦을 만","暇":"겨를 가","曜":"빛날 요","書":"글 서",
+"最":"가장 최","月":"달 월","有":"있을 유","服":"옷 복","朝":"아침 조","木":"나무 목","末":"끝 말",
+"本":"근본 본","机":"책상 궤","束":"묶을 속","来":"올 래","校":"학교 교","業":"업 업","楽":"즐길 락",
+"機":"틀 기","歌":"노래 가","歩":"걸음 보","死":"죽을 사","毎":"매양 매","氏":"성씨 씨","気":"기운 기",
+"水":"물 수","江":"강 강","泉":"샘 천","泳":"헤엄칠 영","温":"따뜻할 온","準":"준할 준","火":"불 화",
+"然":"그럴 연","焼":"불태울 소","物":"물건 물","犬":"개 견","球":"공 구","理":"다스릴 리","生":"날 생",
+"画":"그림 화","病":"병 병","目":"눈 목","真":"참 진","社":"모일 사","私":"사사 사","答":"대답 답",
+"簡":"간략할 간","約":"맺을 약","終":"마칠 종","給":"줄 급","緒":"실마리 서","者":"놈 자","聞":"들을 문",
+"自":"스스로 자","茶":"차 다","菜":"나물 채","行":"다닐 행","見":"볼 견","覚":"깨달을 각","親":"친할 친",
+"試":"시험 시","話":"말씀 화","誕":"낳을 탄","読":"읽을 독","誰":"누구 수","議":"의논할 의","財":"재물 재",
+"買":"살 매","赤":"붉을 적","起":"일어날 기","趣":"뜻 취","車":"수레 거","転":"구를 전","輩":"무리 배",
+"近":"가까울 근","週":"돌 주","遊":"놀 유","達":"통달할 달","部":"떼 부","野":"들 야","金":"쇠 금",
+"鉄":"쇠 철","銀":"은 은","間":"사이 간","院":"집 원","隣":"이웃 린","電":"번개 전","静":"고요할 정",
+"面":"낯 면","韓":"나라이름 한","音":"소리 음","願":"원할 원","飛":"날 비","食":"밥 식","飯":"밥 반",
+"飲":"마실 음","館":"집 관","駅":"역 역","験":"시험 험","高":"높을 고"
+};
+
+function kvgUrl(ch){
+  const code = ch.codePointAt(0).toString(16).padStart(5,'0');
+  return `https://cdn.jsdelivr.net/gh/KanjiVG/kanjivg@master/kanji/${code}.svg`;
+}
+
+function extractKanji(word){
+  const matches = word.match(/[\u4e00-\u9faf]/g);
+  if(!matches) return [];
+  return [...new Set(matches)];
+}
+
+function renderKanjiPanel(word){
+  const box = document.getElementById('kanjiList');
+  const chars = extractKanji(word);
+  box.innerHTML = '';
+  if(chars.length===0){
+    box.innerHTML = '<div class="kanji-empty">이 단어에는 한자가 없어요</div>';
+    return;
+  }
+  chars.forEach(ch=>{
+    const eum = hanjaEumhun[ch] || '훈음 정보 없음';
+    const item = document.createElement('div');
+    item.className = 'kanji-item';
+    item.innerHTML = `
+      <img src="${kvgUrl(ch)}" alt="${ch} 획순" loading="lazy" onerror="this.style.visibility='hidden'">
+      <div class="kanji-char">${ch}</div>
+      <div class="kanji-eum">${eum}</div>
+    `;
+    box.appendChild(item);
+  });
+}
+
+function updateKanjiVisibility(){
+  document.getElementById('kanjiPanel').classList.toggle('show', flipped);
+}
+
 function render(){
   const list = data[currentUnit];
   const realIdx = order[idx];
@@ -706,6 +836,8 @@ function render(){
   unitLabel.textContent = currentUnit;
   document.getElementById('prevBtn').disabled = idx===0;
   document.getElementById('nextBtn').disabled = idx===list.length-1;
+  renderKanjiPanel(kanji);
+  updateKanjiVisibility();
   renderList();
 }
 
@@ -722,12 +854,14 @@ function renderList(){
 card.addEventListener('click', ()=>{
   flipped = !flipped;
   card.classList.toggle('flipped', flipped);
+  updateKanjiVisibility();
 });
 
 document.getElementById('flipBtn').onclick = (e)=>{
   e.stopPropagation();
   flipped = !flipped;
   card.classList.toggle('flipped', flipped);
+  updateKanjiVisibility();
 };
 
 document.getElementById('prevBtn').onclick = ()=>{
